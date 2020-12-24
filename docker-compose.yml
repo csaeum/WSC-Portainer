@@ -1,0 +1,38 @@
+version: "3.3"
+
+services:
+  portainer:
+    image: "portainer/portainer-ce"
+    container_name: Portainer
+    command: "-H unix:///var/run/docker.sock"
+    restart: always
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "portainer_data:/data"
+
+    networks:
+      - "traefik_proxy"
+      - "default"
+
+    labels:
+      traefik.enable: true
+
+      # Routers
+      traefik.http.routers.portainer.rule: Host(`portainer.domain.example`)
+      traefik.http.routers.portainer.entrypoints: websecure
+      traefik.http.routers.portainer.tls.certresolver: myresolver
+      traefik.http.routers.portainer.service: portainer_svc
+
+      traefik.http.services.portainer_svc.loadBalancer.server.port: 9000
+
+      traefik.docker.network: traefik_proxy
+
+volumes:
+  portainer_data:
+
+networks:
+  traefik_proxy:
+    external:
+      name: traefik_proxy
+  default:
+    driver: bridge
