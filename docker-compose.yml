@@ -1,38 +1,38 @@
 version: "3.3"
 
+volumes:
+  portainer_data:
+    driver: local-persist
+    driver_opts:
+      mountpoint: ${CONTAINERVOLUMES}/portainer
+
 services:
   portainer:
     image: "portainer/portainer-ce"
-    container_name: Portainer
+    container_name: ${COMPOSE_PROJECT_NAME}
     command: "-H unix:///var/run/docker.sock"
     restart: always
     volumes:
+      - portainer_data:/data
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "portainer_data:/data"
 
     networks:
-      - "traefik_proxy"
+      - "${PROXY_NETWORK}"
       - "default"
 
     labels:
-      traefik.enable: true
-
+      - traefik.enable=true
       # Routers
-      traefik.http.routers.portainer.rule: Host(`portainer.domain.example`)
-      traefik.http.routers.portainer.entrypoints: websecure
-      traefik.http.routers.portainer.tls.certresolver: myresolver
-      traefik.http.routers.portainer.service: portainer_svc
-
-      traefik.http.services.portainer_svc.loadBalancer.server.port: 9000
-
-      traefik.docker.network: traefik_proxy
-
-volumes:
-  portainer_data:
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=${HOSTRULE}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=myresolver
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.service=${COMPOSE_PROJECT_NAME}_SVC
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}_SVC.loadBalancer.server.port=9000
+      - traefik.docker.network=${PROXY_NETWORK}
 
 networks:
   traefik_proxy:
     external:
-      name: traefik_proxy
+      name: ${PROXY_NETWORK}
   default:
     driver: bridge
